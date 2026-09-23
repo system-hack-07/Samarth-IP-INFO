@@ -441,14 +441,20 @@ a { color: inherit; }
   color: var(--orange);
 }
 .provider-current.backup .status-dot { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+.provider-current.security {
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.35);
+  color: var(--green);
+}
+.provider-current.security .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
 
 .provider-options {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 .provider-option {
-  padding: 12px 10px;
+  padding: 12px 8px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--r);
@@ -521,6 +527,11 @@ a { color: inherit; }
   background: rgba(251,146,60,0.12);
   border: 1px solid rgba(251,146,60,0.35);
   color: var(--orange);
+}
+.provider-badge.security {
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.35);
+  color: var(--green);
 }
 .provider-badge .status-dot {
   width: 5px; height: 5px; border-radius: 50%;
@@ -949,7 +960,7 @@ a { color: inherit; }
             </svg>
           </div>
           <div class="provider-option-name">Auto</div>
-          <div class="provider-option-desc">Fallback chain</div>
+          <div class="provider-option-desc">Fallback</div>
         </button>
         <button type="button" class="provider-option" data-provider="primary">
           <div class="provider-option-icon">
@@ -959,7 +970,7 @@ a { color: inherit; }
             </svg>
           </div>
           <div class="provider-option-name">Primary</div>
-          <div class="provider-option-desc">Fast & rich</div>
+          <div class="provider-option-desc">Your API</div>
         </button>
         <button type="button" class="provider-option" data-provider="backup">
           <div class="provider-option-icon">
@@ -969,6 +980,16 @@ a { color: inherit; }
           </div>
           <div class="provider-option-name">Backup</div>
           <div class="provider-option-desc">ipwho.is</div>
+        </button>
+        <button type="button" class="provider-option" data-provider="security">
+          <div class="provider-option-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <div class="provider-option-name">Security</div>
+          <div class="provider-option-desc">IPLocate</div>
         </button>
       </div>
     </div>
@@ -1134,10 +1155,6 @@ function getAudioCtx() {
   return audioCtx;
 }
 
-/**
- * Play a synthesized click/tap sound.
- * type: 'click' | 'tap' | 'success' | 'error' | 'toggle'
- */
 function playSound(type = 'click') {
   if (!soundEnabled) return;
   const ctx = getAudioCtx();
@@ -1145,8 +1162,6 @@ function playSound(type = 'click') {
   if (ctx.state === 'suspended') ctx.resume();
 
   const now = ctx.currentTime;
-
-  // Preset configurations
   const presets = {
     click:   { freq: 820,  dur: 0.045, vol: 0.12, type: 'triangle' },
     tap:     { freq: 1040, dur: 0.035, vol: 0.10, type: 'sine' },
@@ -1154,25 +1169,20 @@ function playSound(type = 'click') {
     success: { freq: 880,  dur: 0.10,  vol: 0.14, type: 'sine', second: 1320 },
     error:   { freq: 320,  dur: 0.13,  vol: 0.14, type: 'sawtooth' },
   };
-
   const p = presets[type] || presets.click;
 
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-
   osc.type = p.type;
   osc.frequency.setValueAtTime(p.freq, now);
   osc.frequency.exponentialRampToValueAtTime(p.freq * 0.55, now + p.dur);
-
   gain.gain.setValueAtTime(p.vol, now);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + p.dur);
-
   osc.connect(gain);
   gain.connect(ctx.destination);
   osc.start(now);
   osc.stop(now + p.dur);
 
-  // Optional second tone (chime)
   if (p.second) {
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
@@ -1187,18 +1197,8 @@ function playSound(type = 'click') {
   }
 }
 
-/* Auto-bind click sound to every button, chip, link, and [role=button] */
 function attachClickSounds() {
-  const selectors = [
-    'button',
-    '.chip',
-    '.icon-btn',
-    '.btn',
-    '.provider-option',
-    '.result-action',
-    '.bottom-nav-btn',
-    'a[href^="#"]',
-  ];
+  const selectors = ['button', '.chip', '.icon-btn', '.btn', '.provider-option', '.result-action', '.bottom-nav-btn', 'a[href^="#"]'];
   document.querySelectorAll(selectors.join(',')).forEach(el => {
     if (el.dataset.soundBound) return;
     el.dataset.soundBound = '1';
@@ -1206,7 +1206,6 @@ function attachClickSounds() {
   });
 }
 
-/* Sound toggle button */
 const soundToggle = document.getElementById('soundToggle');
 const iconSoundOn  = soundToggle.querySelector('.icon-sound-on');
 const iconSoundOff = soundToggle.querySelector('.icon-sound-off');
@@ -1214,7 +1213,6 @@ const iconSoundOff = soundToggle.querySelector('.icon-sound-off');
 function updateSoundUI() {
   iconSoundOn.style.opacity  = soundEnabled ? '1' : '0';
   iconSoundOff.style.opacity = soundEnabled ? '0' : '1';
-  soundToggle.style.transform = '';
 }
 updateSoundUI();
 
@@ -1314,6 +1312,11 @@ const ICONS = {
   clock:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
   building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/></svg>',
   hash:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>',
+  shield:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  server:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>',
+  alert:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  dollar:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  phone:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
 };
 
 function infoRow(label, value, iconName, mono = false) {
@@ -1350,9 +1353,9 @@ function updateProviderUI() {
   document.querySelectorAll('.provider-option').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-provider') === selectedProvider);
   });
-  const labels = { auto: 'Auto', primary: 'Primary', backup: 'Backup' };
+  const labels = { auto: 'Auto', primary: 'Primary', backup: 'Backup', security: 'Security' };
   providerCurrentText.textContent = labels[selectedProvider] || 'Auto';
-  providerCurrent.classList.remove('auto', 'primary', 'backup');
+  providerCurrent.classList.remove('auto', 'primary', 'backup', 'security');
   providerCurrent.classList.add(selectedProvider);
 }
 
@@ -1423,9 +1426,9 @@ function renderResult(d, provider) {
     providerBadgeText.textContent =
       provider === 'primary' ? 'Primary API' :
       provider === 'backup'  ? 'Backup API'  :
-      'Auto';
-    providerBadge.classList.remove('primary', 'backup');
-    providerBadge.classList.add(provider === 'backup' ? 'backup' : 'primary');
+      provider === 'security' ? 'Security API' : 'Auto';
+    providerBadge.classList.remove('primary', 'backup', 'security');
+    providerBadge.classList.add(provider === 'backup' ? 'backup' : provider === 'security' ? 'security' : 'primary');
   } else {
     providerBadge.style.display = 'none';
   }
@@ -1441,6 +1444,17 @@ function renderResult(d, provider) {
   if (d.org)        rows.push(infoRow('Organization', d.org, 'building'));
   if (d.domain)     rows.push(infoRow('Domain', d.domain, 'globe'));
   if (d.asn)        rows.push(infoRow('ASN', String(d.asn), 'hash', true));
+
+  // Security & Currency
+  if (d.currency_code)  rows.push(infoRow('Currency', `${d.currency_code}${d.currency_symbol ? ' ' + d.currency_symbol : ''}`, 'dollar'));
+  if (d.calling_code)   rows.push(infoRow('Calling Code', `+${d.calling_code}`, 'phone'));
+  if (d.is_vpn != null)       rows.push(infoRow('VPN', d.is_vpn ? 'Yes' : 'No', 'shield'));
+  if (d.is_proxy != null)     rows.push(infoRow('Proxy', d.is_proxy ? 'Yes' : 'No', 'shield'));
+  if (d.is_tor != null)       rows.push(infoRow('Tor', d.is_tor ? 'Yes' : 'No', 'shield'));
+  if (d.is_datacenter != null) rows.push(infoRow('Datacenter', d.is_datacenter ? 'Yes' : 'No', 'server'));
+  if (d.is_abuser != null)    rows.push(infoRow('Abuser', d.is_abuser ? 'Yes' : 'No', 'alert'));
+  if (d.company_name)   rows.push(infoRow('Company', d.company_name, 'building'));
+  if (d.abuse_email)    rows.push(infoRow('Abuse Contact', d.abuse_email, 'mail'));
 
   resultGrid.innerHTML = rows.map((html, i) =>
     html.replace('class="info-row"', `class="info-row" style="animation-delay:${i * 35}ms"`)
@@ -1518,10 +1532,7 @@ if (window.matchMedia('(min-width: 768px)').matches) {
   setTimeout(() => input.focus(), 900);
 }
 
-/* Attach sound binding to all interactive elements */
 attachClickSounds();
-
-/* Observe DOM changes and bind new elements (e.g. result buttons) */
 const observer = new MutationObserver(() => attachClickSounds());
 observer.observe(document.body, { childList: true, subtree: true });
 </script>
